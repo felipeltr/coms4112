@@ -2,7 +2,7 @@
 
 #include "tree.h"
 
-int main (void) {
-	printf("Hi\n");
+int main (int argc, char** argv) {
+	
 	return 0;
 }

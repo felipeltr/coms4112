@@ -1,4 +1,4 @@
-OUTPUT = main
+OUTPUT = build
 
 CC = gcc
 
