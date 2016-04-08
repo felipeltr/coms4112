@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "tree.h"
 
@@ -11,7 +12,7 @@ struct tree_struct {
 };
 
 void die() {
-	perror("memory allocation failed");
+	fprintf(stderr,"memory allocation failed\n");
 	exit(1);
 }
 
@@ -31,6 +32,8 @@ void perform_insertions(Tree t, int n) {
 	for(i=0;i<n;i++)
 		samples[i] = (i+1)*10; // TODO: change to random generator
 
+	// TODO: sort samples
+
 	int loadPerLevel[t->depth];
 	memset(loadPerLevel,0,t->depth * sizeof(int));
 
@@ -39,6 +42,7 @@ void perform_insertions(Tree t, int n) {
 	// calculate insertions on each level
 	// by simulating insertion algorithm
 	for(i=0;i<n;i++) {
+		if(l==-1) { fprintf(stderr,"Too much elements\n"); exit(1); }
 		for(j=0;j<l;j++)
 			printf("\t");
 		printf("%d\n",samples[i]);
@@ -46,7 +50,7 @@ void perform_insertions(Tree t, int n) {
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
 				l--;
-				while(loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 )
+				while( l >= 0 && loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 )
 					l--;
 		} else
 			while(l != (t->depth - 1))
@@ -72,7 +76,7 @@ void perform_insertions(Tree t, int n) {
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
 				l--;
-				while(loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 )
+				while( l >= 0 && loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 )
 					l--;
 		} else
 			while(l != (t->depth - 1))
@@ -82,7 +86,7 @@ void perform_insertions(Tree t, int n) {
 	// pad with MAXINT
 	for(i=0;i<t->depth;i++)
 		for(j=loadPerLevel[i];j<levelArrSize[i];j++)
-			t->tree[i][j] = -1;
+			t->tree[i][j] = INT_MAX;
 
 	// pretty printer
 	for(i=0;i<t->depth;i++) {
