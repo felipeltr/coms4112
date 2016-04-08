@@ -5,12 +5,12 @@
 typedef struct tree_struct * Tree;
 
 /**
-	Creates tree.
+	Initializes tree.
 	The tree contains 'levels' levels,
 		where the k'th level has fanout levelSizes[k].
 	Returns tree reference.
 */
-Tree create_tree(int levels, int* levelSizes);
+Tree init_tree(int levels, int* levelSizes);
 
 /**
 	Inserts n random keys into tree t.

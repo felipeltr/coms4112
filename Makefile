@@ -2,7 +2,7 @@ OUTPUT = build
 
 CC = gcc
 
-OBJS = main.o
+OBJS = main.o tree.o
 
 $(OUTPUT): $(OBJS)
 	$(CC) $(OBJS) -o $(OUTPUT)
