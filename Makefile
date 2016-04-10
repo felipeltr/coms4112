@@ -2,7 +2,7 @@ OUTPUT = build
 
 CC = gcc
 
-OBJS = main.o tree.o
+OBJS = main.o tree.o random.o
 
 $(OUTPUT): $(OBJS)
 	$(CC) $(OBJS) -o $(OUTPUT)
@@ -19,3 +19,4 @@ all: clean $(OUTPUT)
 
 main.o: main.c
 tree.o: tree.c
+random.o: random.c

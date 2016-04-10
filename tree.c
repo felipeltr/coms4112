@@ -2,8 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 #include "tree.h"
+#include "random.h"
+
+#define int int32_t
 
 struct tree_struct {
 	int** tree;
@@ -19,6 +23,7 @@ void die() {
 Tree init_tree(int levels, int* levelSizes) {
 	Tree t;
 	if( (t = (Tree)malloc(sizeof(struct tree_struct)) ) == NULL ) die();
+	if( (t->levelSize = (int*)malloc(levels*sizeof(int)) ) == NULL ) die();
 
 	t->depth = levels;
 	memcpy(t->levelSize, levelSizes, levels * sizeof(int));
@@ -27,12 +32,11 @@ Tree init_tree(int levels, int* levelSizes) {
 }
 
 void perform_insertions(Tree t, int n) {
-	int i, j, samples[n];
+	int i, j;
 
-	for(i=0;i<n;i++)
-		samples[i] = (i+1)*10; // TODO: change to random generator
-
-	// TODO: sort samples
+	rand32_t *gen = rand32_init(time(NULL));
+	int* samples = generate_sorted_unique(n, gen);
+	free(gen);
 
 	int loadPerLevel[t->depth];
 	memset(loadPerLevel,0,t->depth * sizeof(int));
@@ -43,9 +47,9 @@ void perform_insertions(Tree t, int n) {
 	// by simulating insertion algorithm
 	for(i=0;i<n;i++) {
 		if(l==-1) { fprintf(stderr,"Too much elements\n"); exit(1); }
-		for(j=0;j<l;j++)
-			printf("\t");
-		printf("%d\n",samples[i]);
+		//for(j=0;j<l;j++)
+		//	printf("\t");
+		//printf("%d\n",samples[i]);
 		loadPerLevel[l]++;
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
@@ -56,15 +60,17 @@ void perform_insertions(Tree t, int n) {
 			while(l != (t->depth - 1))
 				l++;
 	}
+
+	if(!loadPerLevel[i]) { fprintf(stderr,"Root node empty\n"); exit(1); }
 	
 	// allocate space for each level
 	int levelArrSize[t->depth];
 	if( posix_memalign((void**)&(t->tree),16,t->depth*sizeof(int*)) != 0) die();
 	for(i=0;i<t->depth;i++) {
-		if (loadPerLevel[i]) // check if there is at least one element
-			levelArrSize[i] = ( (loadPerLevel[i] / t->levelSize[i]) + (loadPerLevel[i] % t->levelSize[i] != 0) ) * t->levelSize[i];
-		else // if not, create one element only
-			levelArrSize[i] = t->levelSize[i];
+		//if (loadPerLevel[i]) // check if there is at least one element
+		levelArrSize[i] = ( (loadPerLevel[i] / t->levelSize[i]) + (loadPerLevel[i] % t->levelSize[i] != 0) ) * t->levelSize[i];
+		//else // if not, output error
+			//levelArrSize[i] = t->levelSize[i];
 		if( posix_memalign( (void**)&(t->tree[i]),16, levelArrSize[i]* sizeof(int)) != 0) die();
 	}
 
@@ -88,6 +94,7 @@ void perform_insertions(Tree t, int n) {
 		for(j=loadPerLevel[i];j<levelArrSize[i];j++)
 			t->tree[i][j] = INT_MAX;
 
+	/*
 	// pretty printer
 	for(i=0;i<t->depth;i++) {
 		printf("level %d: [ ",i);
@@ -98,6 +105,9 @@ void perform_insertions(Tree t, int n) {
 		}
 		printf("]\n");
 	}
+	*/
+
+	free(samples);
 }
 
 
