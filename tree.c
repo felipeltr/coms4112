@@ -108,13 +108,21 @@ void perform_insertions(Tree t, int32_t n) {
 
 void perform_probes(Tree t, int32_t n){
 	//testing purpose probe
-	int32_t testprobe = 95;
+	int32_t testprobe[8];
+	testprobe[0] = 5;
+	testprobe[1] = 15;
+	testprobe[2] = 25;
+	testprobe[3] = 35;
+	testprobe[4] = 45;
+	testprobe[5] = 55;
+	testprobe[6] = 65;
+	testprobe[7] = 75;
 	//array of probes to test;
 	int32_t	probes[n];
 
 	for(int i = 0; i < n; i++){
 		//TODO: Set equal to random selection
-		probes[i] = testprobe;
+		probes[i] = testprobe[i];
 	}
 	//start at root and traverse or add keys when passed by
 	for(int i = 0; i < n; i++){
@@ -126,6 +134,7 @@ void perform_probes(Tree t, int32_t n){
 		int identifier = 0;
 		bool atLeaf = false;
 		int counter = 0;
+		int smallarray = 0;
 
 		while (found == false) {
 
@@ -137,11 +146,12 @@ void perform_probes(Tree t, int32_t n){
 			if(counter < t->levelSize[depth]){
 				if (probe < t->tree[depth][position] && (!atLeaf)){
 					depth++;
-					position = position * t->levelSize[depth];
+					position = position * t->levelSize[depth]+smallarray;
 					counter = 0;
 				}
 				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
-					identifier += getKeys(t, depth, position) + 1;
+					identifier += getKeys(t, depth, position)+1;
+					printf("%d \n", identifier);
 					position++;
 					counter++;
 				} 
@@ -160,6 +170,7 @@ void perform_probes(Tree t, int32_t n){
 					found = true;
 				}
 				else{
+					smallarray++;
 					depth++;
 					position = position * t->levelSize[depth];
 					counter = 0;
@@ -192,8 +203,8 @@ int getKeys(Tree t, int depth, int position){
 			position++;
 			counter++;
 		}
+		keys+= t->levelSize[depth];
 	}
-
 	return keys;
 
 
