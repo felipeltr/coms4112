@@ -24,5 +24,8 @@ int main (int argc, char** argv) {
 
 	perform_insertions(t,k);
 
+	//printf(t->depth);
+	perform_probes(t, p);
+
 	return 0;
 }

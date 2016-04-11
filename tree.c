@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #include "tree.h"
 
 struct tree_struct {
-	int** tree;
-	int depth;
-	int* levelSize;
+	int32_t** tree;
+	int32_t depth;
+	int32_t* levelSize;
 };
 
 void die() {
@@ -16,28 +17,28 @@ void die() {
 	exit(1);
 }
 
-Tree init_tree(int levels, int* levelSizes) {
+Tree init_tree(int32_t levels, int32_t* levelSizes) {
 	Tree t;
 	if( (t = (Tree)malloc(sizeof(struct tree_struct)) ) == NULL ) die();
 
 	t->depth = levels;
-	memcpy(t->levelSize, levelSizes, levels * sizeof(int));
+	memcpy(t->levelSize, levelSizes, levels * sizeof(int32_t));
 
 	return t;
 }
 
-void perform_insertions(Tree t, int n) {
-	int i, j, samples[n];
+void perform_insertions(Tree t, int32_t n) {
+	int32_t i, j, samples[n];
 
 	for(i=0;i<n;i++)
 		samples[i] = (i+1)*10; // TODO: change to random generator
 
 	// TODO: sort samples
 
-	int loadPerLevel[t->depth];
-	memset(loadPerLevel,0,t->depth * sizeof(int));
+	int32_t loadPerLevel[t->depth];
+	memset(loadPerLevel,0,t->depth * sizeof(int32_t));
 
-	int l = t->depth - 1;
+	int32_t l = t->depth - 1;
 
 	// calculate insertions on each level
 	// by simulating insertion algorithm
@@ -58,19 +59,19 @@ void perform_insertions(Tree t, int n) {
 	}
 	
 	// allocate space for each level
-	int levelArrSize[t->depth];
-	if( posix_memalign((void**)&(t->tree),16,t->depth*sizeof(int*)) != 0) die();
+	int32_t levelArrSize[t->depth];
+	if( posix_memalign((void**)&(t->tree),16,t->depth*sizeof(int32_t*)) != 0) die();
 	for(i=0;i<t->depth;i++) {
 		if (loadPerLevel[i]) // check if there is at least one element
 			levelArrSize[i] = ( (loadPerLevel[i] / t->levelSize[i]) + (loadPerLevel[i] % t->levelSize[i] != 0) ) * t->levelSize[i];
 		else // if not, create one element only
 			levelArrSize[i] = t->levelSize[i];
-		if( posix_memalign( (void**)&(t->tree[i]),16, levelArrSize[i]* sizeof(int)) != 0) die();
+		if( posix_memalign( (void**)&(t->tree[i]),16, levelArrSize[i]* sizeof(int32_t)) != 0) die();
 	}
 
 	// insert into tree
 	l = t->depth - 1;
-	memset(loadPerLevel,0,t->depth * sizeof(int));
+	memset(loadPerLevel,0,t->depth * sizeof(int32_t));
 	for(i=0;i<n;i++) {
 		t->tree[l][ loadPerLevel[l]++ ] = samples[i];
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
@@ -88,6 +89,8 @@ void perform_insertions(Tree t, int n) {
 		for(j=loadPerLevel[i];j<levelArrSize[i];j++)
 			t->tree[i][j] = INT_MAX;
 
+
+
 	// pretty printer
 	for(i=0;i<t->depth;i++) {
 		printf("level %d: [ ",i);
@@ -98,6 +101,104 @@ void perform_insertions(Tree t, int n) {
 		}
 		printf("]\n");
 	}
+
+	//printf("%d" ,t->levelSize[0]);
+
+}
+
+void perform_probes(Tree t, int32_t n){
+	//testing purpose probe
+	int32_t testprobe = 95;
+	//array of probes to test;
+	int32_t	probes[n];
+
+	for(int i = 0; i < n; i++){
+		//TODO: Set equal to random selection
+		probes[i] = testprobe;
+	}
+	//start at root and traverse or add keys when passed by
+	for(int i = 0; i < n; i++){
+
+		bool found = false;
+		int probe = probes[i];
+		int depth = 0;
+		int position = 0;
+		int identifier = 0;
+		bool atLeaf = false;
+		int counter = 0;
+
+		while (found == false) {
+
+			if(depth == (t->depth)-1){
+				atLeaf = true;
+			}
+
+			//check if position is valid
+			if(counter < t->levelSize[depth]){
+				if (probe < t->tree[depth][position] && (!atLeaf)){
+					depth++;
+					position = position * t->levelSize[depth];
+					counter = 0;
+				}
+				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
+					identifier += getKeys(t, depth, position) + 1;
+					position++;
+					counter++;
+				} 
+
+				else if ((probe < t->tree[depth][position]) && (atLeaf)){
+					found = true;
+				}
+
+				else if ((probe >= t->tree[depth][position]) && (atLeaf)){
+					identifier++;
+					position++;
+					counter++;
+				}
+			} else{
+				if(atLeaf){
+					found = true;
+				}
+				else{
+					depth++;
+					position = position * t->levelSize[depth];
+					counter = 0;
+				}
+			}
+
+			
+
+		}
+		printf("For probe %d : %d \n", probe, identifier);
+	}
+}
+
+//supposed to get total keys when passed a pointer
+int getKeys(Tree t, int depth, int position){
+	depth++;
+	position = position * t->levelSize[depth];
+	bool atLeaf = false;
+	int keys = 0;
+	int counter = 0;
+	if(depth == (t->depth)-1){
+		atLeaf = true;
+	}
+
+	if(atLeaf)
+		keys = t->levelSize[depth];
+	else{
+		while(counter <= t->levelSize[depth]){
+			keys += getKeys(t,depth,position);
+			position++;
+			counter++;
+		}
+	}
+
+	return keys;
+
+
+
+
 }
 
 
