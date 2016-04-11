@@ -24,11 +24,13 @@ void perform_insertions(Tree t, int n);
 		- results[0] has the n probes realized.
 		- results[1] has the key for each probe, respectively.
 */
-void perform_probes(Tree t, int n, int** results);
+void perform_probes(Tree t, int n);
 
 /*
 	Destroys tree.
 */
 void destroy_tree(Tree t);
+
+int getKeys(Tree t, int depth, int position);
 
 #endif
