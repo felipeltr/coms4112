@@ -104,7 +104,6 @@ void perform_insertions(Tree t, int32_t n) {
 			t->tree[i][j] = INT_MAX;
 
 
-	/*
 	// pretty printer
 	for(i=0;i<t->depth;i++) {
 		printf("level %d: [ ",i);
@@ -115,29 +114,20 @@ void perform_insertions(Tree t, int32_t n) {
 		}
 		printf("]\n");
 	}
-	*/
 
-	//free(samples);
+	//printf("%d" ,t->levelSize[0]);
 
 }
 
 void perform_probes(Tree t, int32_t n){
 	//testing purpose probe
-	int32_t testprobe[8];
-	testprobe[0] = 5;
-	testprobe[1] = 15;
-	testprobe[2] = 25;
-	testprobe[3] = 35;
-	testprobe[4] = 45;
-	testprobe[5] = 55;
-	testprobe[6] = 65;
-	testprobe[7] = 105;
+
 	//array of probes to test;
 	int32_t	probes[n];
 
 	for(int i = 0; i < n; i++){
 		//TODO: Set equal to random selection
-		probes[i] = testprobe[i];
+		probes[i] = (i)*10 + 5;
 	}
 	//start at root and traverse or add keys when passed by
 	for(int i = 0; i < n; i++){
@@ -149,8 +139,7 @@ void perform_probes(Tree t, int32_t n){
 		int identifier = 0;
 		bool atLeaf = false;
 		int counter = 0;
-		int smallarray = 0;
-
+		int fullright = 0;
 		while (found == false) {
 
 			if(depth == (t->depth)-1){
@@ -161,40 +150,55 @@ void perform_probes(Tree t, int32_t n){
 			if(counter < t->levelSize[depth]){
 				if (probe < t->tree[depth][position] && (!atLeaf)){
 					depth++;
-					position = position * t->levelSize[depth]+smallarray;
+					position = (position+fullright) * (t->levelSize[depth]);
+					//printf("Position is now %d\n", position);
 					counter = 0;
 				}
 				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
 					identifier += getKeys(t, depth, position)+1;
-					printf("%d \n", identifier);
+					//printf("keys : %d \n", identifier);
 					position++;
 					counter++;
+					if(depth != (t->depth-2))
+						fullright++;
+					
+					
 				} 
 
 				else if ((probe < t->tree[depth][position]) && (atLeaf)){
 					found = true;
+					//printf("Found before %d \n", position);
 				}
 
 				else if ((probe >= t->tree[depth][position]) && (atLeaf)){
+					//printf("Right %d and %d \n",t->tree[depth][position], probe);
 					identifier++;
 					position++;
 					counter++;
+					
 				}
 			} else{
 				if(atLeaf){
 					found = true;
 				}
 				else{
-					smallarray++;
 					depth++;
-					position = position * t->levelSize[depth];
+					position = position * (t->levelSize[depth]);
 					counter = 0;
+					//fullright++;
+
 				}
 			}
 
 			
 
 		}
+		/*
+		if(probe > 400 && probe < 500){
+			printf("For probe %d : %d \n", probe, identifier);
+			printf("Last node at %d\n", t->tree[depth][position]);
+		}
+		*/
 		printf("For probe %d : %d \n", probe, identifier);
 	}
 }
@@ -226,6 +230,8 @@ int getKeys(Tree t, int depth, int position){
 
 
 }
+
+
 
 
 
