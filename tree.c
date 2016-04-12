@@ -140,6 +140,8 @@ void perform_probes(Tree t, int32_t n){
 		bool atLeaf = false;
 		int counter = 0;
 		int fullright = 0;
+		int cpointers = 0;
+		int npointers = 0;
 		while (found == false) {
 
 			if(depth == (t->depth)-1){
@@ -151,8 +153,10 @@ void perform_probes(Tree t, int32_t n){
 				//if the probe is less than the current position, traverse down and left
 				if (probe < t->tree[depth][position] && (!atLeaf)){
 					depth++;
-					position = (position) * (t->levelSize[depth]);
+					cpointers += counter;
+					position = (cpointers) * (t->levelSize[depth]);
 					//printf("Position is now %d\n", position);
+					cpointers = npointers+counter;
 					counter = 0;
 				}
 				//if probe is greater than position, increment the position
@@ -162,6 +166,7 @@ void perform_probes(Tree t, int32_t n){
 					//printf("keys : %d \n", identifier);
 					position++;
 					counter++;
+					npointers += t->levelSize[depth+1]+1;
 				} 
 				//if probe is less than leaf, found the identifier
 				else if ((probe < t->tree[depth][position]) && (atLeaf)){
@@ -202,6 +207,7 @@ void perform_probes(Tree t, int32_t n){
 		*/
 		
 		printf("For probe %d : %d \n", probe, identifier);
+		//printf("Position : %d\n", position);
 	}
 }
 
