@@ -47,7 +47,7 @@ void perform_insertions(Tree t, int32_t n) {
 	// calculate insertions on each level
 	// by simulating insertion algorithm
 	for(i=0;i<n;i++) {
-		samples[i]=10*i;
+		samples[i]=10*(i+1);
 		if(l==-1) { fprintf(stderr,"Too much elements\n"); exit(1); }
 
 		
@@ -147,13 +147,13 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 			if(counter < t->levelSize[depth]){
 				//if the probe is less than the current position, traverse down and left
 				if (probe < t->tree[depth][position] && (!atLeaf)){
-					printf("%dBumped into %d,",depth,t->tree[depth][position]);
+					printf("%dBumped into %d at %d,",depth,t->tree[depth][position],position);
 					//fflush(stdout);
 
 					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
 						position%t->levelSize[depth]) * (t->levelSize[depth+1]);
 					depth++;
-					printf("Position is now %d\n", position);
+					printf("Position is now %d\n", position+1);
 					counter = 0;
 				}
 				//if probe is greater than position, increment the position
@@ -189,7 +189,8 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 				else{
 					printf("depth: %d\n",depth);
 					//fflush(stdout);
-					position = (position/t->levelSize[depth-1] + position%t->levelSize[depth-1]) * (t->levelSize[depth]+1);
+					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
+						position%t->levelSize[depth]-1) * (t->levelSize[depth+1]);
 					depth++;
 					counter = 0;
 
@@ -206,11 +207,16 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 		}
 		*/
 		
+		printf("CHECK: %d == %d\n",i,identifier);
+		if(i!=identifier)
+		{
+			printf("deu ruim");
+			exit(1);
+		}
 
-		printf("For probe %d : %d \n", probe, identifier);
-		//printf("Position : %d\n", position);
+		printf("Just : %d\n", t->tree[depth][position]);
 
-		printf("\tFor probe %d : %d \n", probe, identifier);
+		printf("\tFor probe %d : %d ----------------------------------\n", probe, identifier);
 
 	}
 }
