@@ -20,17 +20,15 @@ void perform_insertions(Tree t, int n);
 /**
 	Perform n random probes into tree t.
 	Results are stored in 'results', which
-		must be an two-dimensional array of size 2xn.
-		- results[0] has the n probes realized.
-		- results[1] has the key for each probe, respectively.
+		must be an two-dimensional array of size nx2.
+		- results[i][0] has the i'th probe realized.
+		- results[i][1] has the range id for the i'th probe.
 */
-void perform_probes(Tree t, int n);
+void perform_probes(Tree t, int n, int32_t results[][2]);
 
 /*
 	Destroys tree.
 */
 void destroy_tree(Tree t);
-
-int getKeys(Tree t, int depth, int position);
 
 #endif

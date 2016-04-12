@@ -16,6 +16,7 @@ int main (int argc, char** argv) {
 
 	int i, total = argc-3;
 	int levelSizes[total];
+	int32_t results[p][2];
 
 	for(i=0;i<total;i++)
 		levelSizes[i] = atoi(argv[i+3])-1;
@@ -24,7 +25,12 @@ int main (int argc, char** argv) {
 
 	perform_insertions(t,k);
 
-	perform_probes(t, p);
+	perform_probes(t, p, results);
+
+	//for(i=0;i<p;i++)
+	//	printf("Probe %d -> range %d\n",results[i][0],results[i][1]);
+
+	destroy_tree(t);
 
 	return 0;
 }

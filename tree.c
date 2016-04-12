@@ -2,22 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-
 #include <time.h>
-
 #include <stdbool.h>
-
 
 #include "tree.h"
 #include "random.h"
-
-
 
 struct tree_struct {
 	int32_t** tree;
 	int32_t depth;
 	int32_t* levelSize;
 };
+
+static int getKeys(Tree t, int depth, int position);
 
 void die() {
 	fprintf(stderr,"memory allocation failed\n");
@@ -38,15 +35,10 @@ Tree init_tree(int32_t levels, int32_t* levelSizes) {
 void perform_insertions(Tree t, int32_t n) {
 	int32_t i, j;
 
-	rand32_t *gen = rand32_init(time(NULL));
+	rand32_t *gen = rand32_init(clock());
 	int32_t* samples = generate_sorted_unique(n, gen);
 	free(gen);
-/*
-	int32_t samples[n];
-	
-	for(i=0;i<n;i++)
-		samples[i] = (i+1)*10; // TODO: change to random generator
-*/
+
 	int32_t loadPerLevel[t->depth];
 	memset(loadPerLevel,0,t->depth * sizeof(int32_t));
 
@@ -55,11 +47,17 @@ void perform_insertions(Tree t, int32_t n) {
 	// calculate insertions on each level
 	// by simulating insertion algorithm
 	for(i=0;i<n;i++) {
-		printf("-------------------------------%d\n",i);
+		samples[i]=10*i;
 		if(l==-1) { fprintf(stderr,"Too much elements\n"); exit(1); }
+
+		
+		// Pretty printer - uncomment to use it
+		printf("-------------------------------%d\n",i); // range identifier
 		for(j=0;j<l;j++)
 			printf("\t");
 		printf("%d\n",samples[i]);
+		
+
 		loadPerLevel[l]++;
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
@@ -71,16 +69,13 @@ void perform_insertions(Tree t, int32_t n) {
 				l++;
 	}
 
-	if(!loadPerLevel[i]) { fprintf(stderr,"Root node empty\n"); exit(1); }
+	if(!loadPerLevel[0]) { fprintf(stderr,"Root node empty\n"); exit(1); }
 	
 	// allocate space for each level
 	int32_t levelArrSize[t->depth];
 	if( posix_memalign((void**)&(t->tree),16,t->depth*sizeof(int32_t*)) != 0) die();
 	for(i=0;i<t->depth;i++) {
-		//if (loadPerLevel[i]) // check if there is at least one element
 		levelArrSize[i] = ( (loadPerLevel[i] / t->levelSize[i]) + (loadPerLevel[i] % t->levelSize[i] != 0) ) * t->levelSize[i];
-		//else // if not, output error
-			//levelArrSize[i] = t->levelSize[i];
 		if( posix_memalign( (void**)&(t->tree[i]),16, levelArrSize[i]* sizeof(int)) != 0) die();
 	}
 
@@ -104,8 +99,8 @@ void perform_insertions(Tree t, int32_t n) {
 		for(j=loadPerLevel[i];j<levelArrSize[i];j++)
 			t->tree[i][j] = INT_MAX;
 
-
-	// pretty printer
+	/*
+	// another pretty printer
 	for(i=0;i<t->depth;i++) {
 		printf("level %d: [ ",i);
 		for(j=0;j<levelArrSize[i];j++) {
@@ -115,31 +110,25 @@ void perform_insertions(Tree t, int32_t n) {
 		}
 		printf("]\n");
 	}
+	*/
 
-	//printf("%d" ,t->levelSize[0]);
+	free(samples);
 
 }
 
-void perform_probes(Tree t, int32_t n){
+void perform_probes(Tree t, int n, int32_t results[][2]) {
 	//testing purpose probe
 
 	//array of probes to test;
 
-	int32_t	probes[n];
-
-	for(int i = 0; i < n; i++){
-		//TODO: Set equal to random selection
-		probes[i] = (i)*10 + 5;
-	}
-
-/*
-	rand32_t *gen = rand32_init(time(NULL));
+	rand32_t *gen = rand32_init(clock());
 	int32_t* probes = generate_sorted_unique(n, gen);
 	free(gen);
-*/
 
 	//start at root and traverse or add keys when passed by
 	for(int i = 0; i < n; i++){
+
+		probes[i] = i*10 + 5;
 
 		bool found = false;
 		int probe = probes[i];
@@ -158,20 +147,21 @@ void perform_probes(Tree t, int32_t n){
 			if(counter < t->levelSize[depth]){
 				//if the probe is less than the current position, traverse down and left
 				if (probe < t->tree[depth][position] && (!atLeaf)){
-					//printf("%dBumped into %d,",depth,t->tree[depth][position]);
+					printf("%dBumped into %d,",depth,t->tree[depth][position]);
 					//fflush(stdout);
 
 					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
 						position%t->levelSize[depth]) * (t->levelSize[depth+1]);
 					depth++;
+					printf("Position is now %d\n", position);
 					counter = 0;
 				}
 				//if probe is greater than position, increment the position
 				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
 					//get keys and update identifier accordingly 
 					identifier += getKeys(t, depth, position)+1;
-					//printf("Passed thru %d, Position is now %d\n",t->tree[depth][position], position+1);
-					//printf("keys : %d \n", identifier);
+					printf("Passed thru %d, Position is now %d\n",t->tree[depth][position], position+1);
+					printf("keys : %d \n", identifier);
 					position++;
 					counter++;
 					//npointers += t->levelSize[depth+1]+1;
@@ -179,12 +169,12 @@ void perform_probes(Tree t, int32_t n){
 				//if probe is less than leaf, found the identifier
 				else if ((probe < t->tree[depth][position]) && (atLeaf)){
 					found = true;
-					//printf("at leaf - Bumped into %d\n",t->tree[depth][position]);
-					//printf("Position: %d\n", position);
+					printf("at leaf - Bumped into %d\n",t->tree[depth][position]);
+					printf("Position: %d\n", position);
 				}
 				//if probe is greater move along the leaf
 				else if ((probe >= t->tree[depth][position]) && (atLeaf)){
-					//printf("Right %d and %d \n",t->tree[depth][position], probe);
+					printf("Right %d and %d \n",t->tree[depth][position], probe);
 					identifier++;
 					position++;
 					counter++;
@@ -197,8 +187,8 @@ void perform_probes(Tree t, int32_t n){
 				}
 				//if not at leaf, traverse down right most leaf
 				else{
-					//printf("depth: %d\n",depth);
-					//mfflush(stdout);
+					printf("depth: %d\n",depth);
+					//fflush(stdout);
 					position = (position/t->levelSize[depth-1] + position%t->levelSize[depth-1]) * (t->levelSize[depth]+1);
 					depth++;
 					counter = 0;
@@ -226,7 +216,7 @@ void perform_probes(Tree t, int32_t n){
 }
 
 //supposed to get total keys when passed a pointer
-int getKeys(Tree t, int depth, int position){
+static int getKeys(Tree t, int depth, int position) {
 	depth++;
 	position = position * t->levelSize[depth];
 	bool atLeaf = false;
@@ -249,9 +239,15 @@ int getKeys(Tree t, int depth, int position){
 	}
 	return keys;
 
+}
 
-
-
+void destroy_tree(Tree t) {
+	int i;
+	for(i=0;i<t->depth;i++)
+		free(t->tree[i]);
+	free(t->tree);
+	free(t->levelSize);
+	free(t);
 }
 
 
