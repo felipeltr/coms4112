@@ -1,6 +1,8 @@
 #ifndef _TREE_H_
 #define _TREE_H_
 
+#include <stdint.h>
+
 /* Tree reference type */
 typedef struct tree_struct * Tree;
 

@@ -90,30 +90,3 @@ int32_t *generate_sorted_unique(size_t n, rand32_t *gen)
 	qsort(a, n, 4, int32_cmp);
 	return (int32_t*) a;
 }
-
-void ratio_per_bit(const int32_t *a, size_t n)
-{
-	size_t i, j, *c = calloc(32, sizeof(size_t));
-	for (i = 0 ; i != n ; ++i) {
-		int32_t x = a[i];
-		for (j = 0 ; j != 32 ; ++j)
-			c[j] += (a[i] >> j) & 1;
-	}
-	for (j = 0 ; j != 32 ; ++j)
-		fprintf(stderr, "%2ld: %.2f%%\n", j + 1, c[j] * 100.0 / n);
-	free(c);
-}
-/*
-int main(int argc, char **argv)
-{
-	rand32_t *gen = rand32_init(time(NULL));
-	size_t i, n = argc > 1 ? atoll(argv[1]) : 10;
-	int32_t *a = generate_sorted_unique(n, gen);
-	free(gen);
-	for (i = 1 ; i < n ; ++i)
-		assert(a[i - 1] < a[i]);
-	ratio_per_bit(a, n);
-	free(a);
-	return EXIT_SUCCESS;
-}
-*/

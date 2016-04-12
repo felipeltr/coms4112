@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "tree.h"
 
@@ -27,8 +28,8 @@ int main (int argc, char** argv) {
 
 	perform_probes(t, p, results);
 
-	//for(i=0;i<p;i++)
-	//	printf("Probe %d -> range %d\n",results[i][0],results[i][1]);
+	for(i=0;i<p;i++)
+		printf("Probe %d -> range %d\n",results[i][0],results[i][1]);
 
 	destroy_tree(t);
 
