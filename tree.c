@@ -148,28 +148,27 @@ void perform_probes(Tree t, int32_t n){
 
 			//check if position is valid
 			if(counter < t->levelSize[depth]){
+				//if the probe is less than the current position, traverse down and left
 				if (probe < t->tree[depth][position] && (!atLeaf)){
 					depth++;
-					position = (position+fullright) * (t->levelSize[depth]);
+					position = (position) * (t->levelSize[depth]);
 					//printf("Position is now %d\n", position);
 					counter = 0;
 				}
+				//if probe is greater than position, increment the position
 				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
+					//get keys and update identifier accordingly 
 					identifier += getKeys(t, depth, position)+1;
 					//printf("keys : %d \n", identifier);
 					position++;
 					counter++;
-					if(depth != (t->depth-2))
-						fullright++;
-					
-					
 				} 
-
+				//if probe is less than leaf, found the identifier
 				else if ((probe < t->tree[depth][position]) && (atLeaf)){
 					found = true;
-					//printf("Found before %d \n", position);
+					//printf("Position: %d\n", position);
 				}
-
+				//if probe is greater move along the leaf
 				else if ((probe >= t->tree[depth][position]) && (atLeaf)){
 					//printf("Right %d and %d \n",t->tree[depth][position], probe);
 					identifier++;
@@ -178,14 +177,16 @@ void perform_probes(Tree t, int32_t n){
 					
 				}
 			} else{
+				//if end of node and found
 				if(atLeaf){
 					found = true;
 				}
+				//if not at leaf, traverse down right most leaf
 				else{
 					depth++;
 					position = position * (t->levelSize[depth]);
 					counter = 0;
-					//fullright++;
+					fullright++;
 
 				}
 			}
@@ -196,9 +197,10 @@ void perform_probes(Tree t, int32_t n){
 		/*
 		if(probe > 400 && probe < 500){
 			printf("For probe %d : %d \n", probe, identifier);
-			printf("Last node at %d\n", t->tree[depth][position]);
+			printf("Last node at %d and right is %d\n" , position, fullright);
 		}
 		*/
+		
 		printf("For probe %d : %d \n", probe, identifier);
 	}
 }
@@ -210,6 +212,7 @@ int getKeys(Tree t, int depth, int position){
 	bool atLeaf = false;
 	int keys = 0;
 	int counter = 0;
+
 	if(depth == (t->depth)-1){
 		atLeaf = true;
 	}
