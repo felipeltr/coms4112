@@ -29,7 +29,7 @@ int main (int argc, char** argv) {
 	perform_probes(t, p, results);
 
 	for(i=0;i<p;i++)
-		printf("Probe %d -> range %d\n",results[i][0],results[i][1]);
+		printf("Probe %d -> rangeid %d\n",results[i][0],results[i][1]);
 
 	destroy_tree(t);
 
