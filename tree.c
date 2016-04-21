@@ -15,7 +15,7 @@ struct tree_struct {
 	int32_t* levelSize;
 };
 
-static int getKeys(Tree t, int depth, int position);
+//static int getKeys(Tree t, int depth, int position);
 
 void die() {
 	fprintf(stderr,"memory allocation failed\n");
@@ -37,6 +37,7 @@ void perform_insertions(Tree t, int32_t n) {
 	int32_t i, j;
 
 	rand32_t *gen = rand32_init(time(NULL)^0xa4d8937d); // guarantess different seed
+	//rand32_t *gen = rand32_init(5678);
 	int32_t* samples = generate_sorted_unique(n, gen);
 	free(gen);
 
@@ -122,6 +123,7 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 	//array of probes to test;
 
 	rand32_t *gen = rand32_init(time(NULL));
+	//rand32_t *gen = rand32_init(1234);
 	int32_t* probes = generate_sorted_unique(n, gen);
 	free(gen);
 
@@ -129,6 +131,7 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 	int i;
 	for(i = 0; i < n; i++){
 
+		int rangeId = 0;
 		bool found = false;
 		int probe = probes[i];
 		int depth = 0;
@@ -146,7 +149,7 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 			if(counter < t->levelSize[depth]){
 				//if the probe is less than the current position, traverse down and left
 				if (probe < t->tree[depth][position] && (!atLeaf)){
-
+					rangeId += position;
 					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
 						position%t->levelSize[depth]) * (t->levelSize[depth+1]);
 					depth++;
@@ -155,12 +158,13 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 				//if probe is greater than position, increment the position
 				else if((probe >= t->tree[depth][position]) && (!atLeaf)){
 					//get keys and update identifier accordingly 
-					identifier += getKeys(t, depth, position)+1;
+					//identifier += getKeys(t, depth, position)+1;
 					position++;
 					counter++;
 				} 
 				//if probe is less than leaf, found the identifier
 				else if ((probe < t->tree[depth][position]) && (atLeaf)){
+					rangeId += position;
 					found = true;
 				}
 				//if probe is greater move along the leaf
@@ -173,10 +177,12 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 			} else{
 				//if end of node and found
 				if(atLeaf){
+					rangeId += position;
 					found = true;
 				}
 				//if not at leaf, traverse down right most leaf
 				else{
+					rangeId += position;
 					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
 						position%t->levelSize[depth]-1) * (t->levelSize[depth+1]);
 					depth++;
@@ -188,10 +194,12 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 		}
 		
 		results[i][0]=probe;
-		results[i][1]=identifier;
+		//results[i][1]=identifier;
+		results[i][1]=rangeId;
 	}
 }
 
+/*
 // get total keys when passed a pointer
 static int getKeys(Tree t, int depth, int position) {
 	depth++;
@@ -217,6 +225,7 @@ static int getKeys(Tree t, int depth, int position) {
 	return keys;
 
 }
+*/
 
 void destroy_tree(Tree t) {
 	int i;
