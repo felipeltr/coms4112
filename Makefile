@@ -8,7 +8,7 @@ $(OUTPUT): $(OBJS)
 	$(CC) -msse4.2 $(OBJS) -o $(OUTPUT)
 
 %.o: %.c
-	$(CC) -msse4.2 -c -Wall $<
+	$(CC) -O3 -msse4.2 -c -Wall $<
 
 .PHONY: clean
 clean:

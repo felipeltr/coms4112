@@ -35,17 +35,24 @@ int main (int argc, char** argv) {
 	for (i=0;i<p;i++)
 		probes[i] = i*10 + 5;
 
+	clock_t s1 = clock();
 	perform_probes(t, probes, p, results);
+	clock_t e1 = clock();
 
 	for(i=0;i<p;i++)
 		printf("Probe %d -> rangeid %d\n",probes[i],results[i]);
 
 
 	printf("------\n");
+	clock_t s2 = clock();
 	perform_probes_simd(t, probes, p, results);
+	clock_t e2 = clock();
 
 	for(i=0;i<p;i++)
 		printf("Probe %d -> rangeid %d\n",probes[i],results[i]);
+
+	printf("Total time for regular operation: %f s\n",((float)(e1-s1))/CLOCKS_PER_SEC);
+	printf("Total time for SIMD operation: %f s\n",((float)(e2-s2))/CLOCKS_PER_SEC);
 
 	free(probes);
 	destroy_tree(t);
