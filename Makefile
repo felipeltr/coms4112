@@ -5,10 +5,10 @@ CC = gcc
 OBJS = main.o tree.o random.o
 
 $(OUTPUT): $(OBJS)
-	$(CC) $(OBJS) -o $(OUTPUT)
+	$(CC) -msse4.2 $(OBJS) -o $(OUTPUT)
 
 %.o: %.c
-	$(CC) -c -Wall $<
+	$(CC) -msse4.2 -c -Wall $<
 
 .PHONY: clean
 clean:

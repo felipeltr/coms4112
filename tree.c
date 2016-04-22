@@ -6,6 +6,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <mmintrin.h>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#include <smmintrin.h>
+#include <nmmintrin.h>
+#include <immintrin.h>
+
+
 #include "tree.h"
 #include "random.h"
 
@@ -44,11 +54,12 @@ void perform_insertions(Tree t, int32_t n) {
 	int32_t loadPerLevel[t->depth];
 	memset(loadPerLevel,0,t->depth * sizeof(int32_t));
 
-	int32_t l = t->depth - 1;
+	int32_t l = t->depth - 1, lastl;
 
 	// calculate insertions on each level
 	// by simulating insertion algorithm
 	for(i=0;i<n;i++) {
+		samples[i] = (i+1)*10;
 		if(l==-1) { fprintf(stderr,"Too much elements\n"); exit(1); }
 
 		/*
@@ -56,11 +67,12 @@ void perform_insertions(Tree t, int32_t n) {
 		printf("-------------------------------%d\n",i); // range identifier
 		for(j=0;j<l;j++)
 			printf("\t");
-		//printf("%d\n",samples[i]);
+		printf("%d\n",samples[i]);
 		*/
 		
 
 		loadPerLevel[l]++;
+		lastl = l;
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
 				l--;
@@ -72,6 +84,13 @@ void perform_insertions(Tree t, int32_t n) {
 	}
 
 	if(!loadPerLevel[0]) { fprintf(stderr,"Root node empty\n"); exit(1); }
+
+	if(lastl < l)
+		l = lastl+1;
+		while(l < t->depth) {
+			loadPerLevel[l]++;
+			l++;
+		}
 	
 	// allocate space for each level
 	int32_t levelArrSize[t->depth];
@@ -118,14 +137,11 @@ void perform_insertions(Tree t, int32_t n) {
 
 }
 
-void perform_probes(Tree t, int n, int32_t results[][2]) {
+void perform_probes(Tree t, int32_t probes[], int n, int32_t results[]) {
 
 	//array of probes to test;
 
-	rand32_t *gen = rand32_init(time(NULL));
-	//rand32_t *gen = rand32_init(1234);
-	int32_t* probes = generate_sorted_unique(n, gen);
-	free(gen);
+	
 
 	//start at root and traverse or add keys when passed by
 	int i;
@@ -193,10 +209,130 @@ void perform_probes(Tree t, int n, int32_t results[][2]) {
 
 		}
 		
-		results[i][0]=probe;
+		//results[i][0]=probe;
 		//results[i][1]=identifier;
-		results[i][1]=rangeId;
+		results[i]=rangeId;
 	}
+}
+
+void dump (__m128i v) {
+  int n = 4;
+  unsigned int *p1 = (unsigned int *)&v;
+  while (n--) {
+    printf("|%08x", *p1);
+    p1++;
+  }
+  printf("\t");
+  p1 = (unsigned int *)&v;
+  n=4;
+  while (n--) {
+    printf("|%d", *p1);
+    p1++;
+  }
+  printf("\n");
+}
+
+void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
+
+	int i, lv, rangeId;
+	unsigned int pos = 0;
+	unsigned long r = 0;
+	register __m128i probe; // SWITCH TO REGISTER LATER
+	__m128i lvla, lvlb, lvlc, lvld, cmpa, cmpb, cmpc, cmpd;
+	for(i = 0; i < n; i++){
+		probe = _mm_set1_epi32(probes[i]);
+
+		lv = 0;
+		rangeId = 0;
+		pos = 0;
+		r = 0;
+		//printf("-> probing %d\n",probes[i]);
+		//dump(probe);
+		while(lv < t->depth) {
+			
+			switch(t->levelSize[lv]) {
+				case 4: // fanout 5
+					pos <<= 2;
+					// printf("lv %d - fanout 5 - pos %d\n",lv,pos);
+
+					lvla = _mm_load_si128((__m128i *)&(t->tree[lv][pos]));
+					//dump(lvla);
+					cmpa = _mm_cmplt_epi32(probe,lvla);
+					//dump(cmpa);
+					r = 0x10000 | _mm_movemask_epi8(cmpa);
+					// printf("hex: %08x\n",r);
+					r = __builtin_ctzl(r) >> 2; // offset inside node
+					// printf("offset: %d\n",r);
+					rangeId += pos + r;
+					pos += (pos >> 2) + r;
+					lv++;
+				break;
+
+				case 8: // fanout 9
+					pos <<= 3;
+					// printf("lv %d - fanout 9\n",lv);
+					lvla = _mm_load_si128((__m128i *)&(t->tree[lv][pos]));
+					lvlb = _mm_load_si128((__m128i *)&(t->tree[lv][pos+4]));
+					cmpa = _mm_cmplt_epi32(probe,lvla);
+					cmpb = _mm_cmplt_epi32(probe,lvlb);
+					//dump(cmpa);
+					//dump(cmpb);
+					cmpa = _mm_packs_epi32(cmpa,cmpb);
+					//dump(cmpa);
+					r = 0x10000 | _mm_movemask_epi8(cmpa);
+					// printf("hex: %08lx\n",r);
+					r = __builtin_ctzl(r) >> 1; // offset inside node
+					// printf("offset: %ld\n",r);
+
+					rangeId += pos + r;
+					pos += (pos >> 3) + r;
+					lv++;
+
+				break;
+
+				case 16: // fanout 17
+					pos <<= 4;
+					// printf("lv %d - fanout 17 - pos %d\n",lv,pos);
+					// printf("%d\n",t->tree[lv][pos]);
+					lvla = _mm_load_si128((__m128i *)&(t->tree[lv][pos]));
+					lvlb = _mm_load_si128((__m128i *)&(t->tree[lv][pos+4]));
+					lvlc = _mm_load_si128((__m128i *)&(t->tree[lv][pos+8]));
+					lvld = _mm_load_si128((__m128i *)&(t->tree[lv][pos+12]));
+					// dump(lvla);
+					// dump(lvlb);
+					// dump(lvlc);
+					// dump(lvld);
+					cmpa = _mm_cmplt_epi32(probe,lvla);
+					cmpb = _mm_cmplt_epi32(probe,lvlb);
+					cmpc = _mm_cmplt_epi32(probe,lvlc);
+					cmpd = _mm_cmplt_epi32(probe,lvld);
+					// dump(cmpa);
+					// dump(cmpb);
+					// dump(cmpc);
+					// dump(cmpd);
+					cmpa = _mm_packs_epi32(cmpa,cmpb);
+					cmpc = _mm_packs_epi32(cmpc,cmpd);
+					// dump(cmpa);
+					// dump(cmpc);
+					cmpa = _mm_packs_epi16(cmpa,cmpc);
+					// dump(cmpa);
+					r = 0x10000 | _mm_movemask_epi8(cmpa);
+					//printf("hex: %08lx\n",r);
+					r = __builtin_ctzl(r);
+					//printf("offset: %ld\n",r);
+
+					rangeId += pos + r;
+					pos += (pos >> 4) + r;
+					lv++;
+
+				break;
+			}
+			//break;
+		}
+
+		results[i] = rangeId;
+	}
+
 }
 
 /*
@@ -235,7 +371,6 @@ void destroy_tree(Tree t) {
 	free(t->levelSize);
 	free(t);
 }
-
 
 
 

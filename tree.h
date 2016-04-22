@@ -26,7 +26,9 @@ void perform_insertions(Tree t, int n);
 		- results[i][0] has the i'th probe realized.
 		- results[i][1] has the range id for the i'th probe.
 */
-void perform_probes(Tree t, int n, int32_t results[][2]);
+void perform_probes(Tree t, int32_t probes[], int n, int32_t results[]);
+
+void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]);
 
 /*
 	Destroys tree.
