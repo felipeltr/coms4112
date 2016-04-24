@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+#include <limits.h>
 
 #include "tree.h"
 #include "random.h"
@@ -32,8 +33,9 @@ int main (int argc, char** argv) {
 	int32_t* probes = generate_sorted_unique(p, gen);
 	free(gen);
 
-	for (i=0;i<p;i++)
-		probes[i] = i*10 + 5;
+	//for (i=0;i<p;i++)
+	//	probes[i] = i*10 + 5;
+	//probes[0] = INT_MAX-1;
 
 	clock_t s1 = clock();
 	perform_probes(t, probes, p, results);
