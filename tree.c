@@ -260,7 +260,7 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 					//dump(cmpa);
 					r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 					// printf("hex: %08x\n",r);
-					r = __builtin_ctzl(r) >> 2; // offset inside node
+					r = __builtin_ctz(r) >> 2; // offset inside node
 					// printf("offset: %d\n",r);
 					rangeId += pos + r;
 					pos += (pos >> 2) + r;
@@ -280,7 +280,7 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 					//dump(cmpa);
 					r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 					// printf("hex: %08lx\n",r);
-					r = __builtin_ctzl(r) >> 1; // offset inside node
+					r = __builtin_ctz(r) >> 1; // offset inside node
 					// printf("offset: %ld\n",r);
 
 					rangeId += pos + r;
@@ -317,7 +317,7 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 					// dump(cmpa);
 					r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 					//printf("hex: %08lx\n",r);
-					r = __builtin_ctzl(r);
+					r = __builtin_ctz(r);
 					//printf("offset: %ld\n",r);
 
 					rangeId += pos + r;
