@@ -334,6 +334,10 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 
 }
 
+
+
+
+
 /*
 // get total keys when passed a pointer
 static int getKeys(Tree t, int depth, int position) {
@@ -361,6 +365,15 @@ static int getKeys(Tree t, int depth, int position) {
 
 }
 */
+
+void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[]){
+	printf("Made it here\n");
+
+
+
+
+}
+
 
 void destroy_tree(Tree t) {
 	int i;

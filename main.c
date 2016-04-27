@@ -21,6 +21,10 @@ int main (int argc, char** argv) {
 	int i, total = argc-3;
 	int levelSizes[total];
 	int32_t results[p];
+	int hardcode = 0;
+	clock_t s3;
+	clock_t e3;
+
 
 	for(i=0;i<total;i++)
 		levelSizes[i] = atoi(argv[i+3])-1;
@@ -53,8 +57,24 @@ int main (int argc, char** argv) {
 	for(i=0;i<p;i++)
 		printf("Probe %d -> rangeid %d\n",probes[i],results[i]);
 
+	if(total == 3 && levelSizes[0] == 8 && levelSizes[1] == 4 && levelSizes[2] == 8){	
+		hardcode = 1;
+		printf("------\n");
+		s3 = clock();
+		perform_probes_hardcode(t,probes,p,results);
+		e3 = clock();
+		for(i=0;i<p;i++)
+			printf("Probe %d -> rangeid %d\n",probes[i],results[i]);
+		
+	}
+
+
 	printf("Total time for regular operation: %f s\n",((float)(e1-s1))/CLOCKS_PER_SEC);
 	printf("Total time for SIMD operation: %f s\n",((float)(e2-s2))/CLOCKS_PER_SEC);
+	if(hardcode)
+		printf("Total time for hardcode operation: %f s\n",((float)(e3-s3))/CLOCKS_PER_SEC);
+
+
 
 	free(probes);
 	destroy_tree(t);

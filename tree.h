@@ -30,6 +30,8 @@ void perform_probes(Tree t, int32_t probes[], int n, int32_t results[]);
 
 void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]);
 
+void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[]);
+
 /*
 	Destroys tree.
 */
