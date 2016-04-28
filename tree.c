@@ -376,7 +376,7 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 	//root node loaded
 	__m128i lvlaroot = _mm_load_si128((__m128i *)&(t->tree[0][0]));
 	__m128i lvlbroot = _mm_load_si128((__m128i *)&(t->tree[0][4]));
-
+	//assumption that probes are multiples of 4 as said on PIAZZA
 	for(i = 0; i < n; i = i+4){
 		rangeId = 0;
 		rangeId2 = 0;
