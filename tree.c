@@ -215,6 +215,7 @@ void perform_probes(Tree t, int32_t probes[], int n, int32_t results[]) {
 	}
 }
 
+
 static void dump (__m128i v) {
   int n = 4;
   unsigned int *p1 = (unsigned int *)&v;
@@ -232,6 +233,7 @@ static void dump (__m128i v) {
   printf("\n");
 }
 
+
 void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 
 	int i, lv, rangeId;
@@ -248,11 +250,10 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 		//printf("-> probing %d\n",probes[i]);
 		//dump(probe);
 		while(lv < t->depth) {
-			
 			switch(t->levelSize[lv]) {
 				case 4: // fanout 5
 					pos <<= 2;
-					// printf("lv %d - fanout 5 - pos %d\n",lv,pos);
+					//printf("lv %d - fanout 5 - pos %d\n",lv,pos);
 
 					lvla = _mm_load_si128((__m128i *)&(t->tree[lv][pos]));
 					//dump(lvla);
@@ -286,6 +287,7 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 					rangeId += pos + r;
 					pos += (pos >> 3) + r;
 					lv++;
+
 
 				break;
 
@@ -367,11 +369,152 @@ static int getKeys(Tree t, int depth, int position) {
 */
 
 void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[]){
-	printf("Made it here\n");
+	int i, rangeId, rangeId2, rangeId3, rangeId4;
+	unsigned int pos = 0, r = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+	__m128i lvla, lvlb, cmpa, cmpb;
+	//go through probes 4 at a time
+	//root node loaded
+	__m128i lvlaroot = _mm_load_si128((__m128i *)&(t->tree[0][0]));
+	__m128i lvlbroot = _mm_load_si128((__m128i *)&(t->tree[0][4]));
+
+	for(i = 0; i < n; i = i+4){
+		rangeId = 0;
+		rangeId2 = 0;
+		rangeId3 = 0;
+		rangeId4 = 0;
+		pos = 0;
+		pos2 = 0;
+		pos3 = 0;
+		pos4 = 0;
+		r = 0;
+
+		
+		__m128i k = _mm_load_si128((__m128i*)&(probes[i]));
+		register __m128i k1 = _mm_shuffle_epi32(k, _MM_SHUFFLE(0,0,0,0));
+		register __m128i k2 = _mm_shuffle_epi32(k, _MM_SHUFFLE(1,1,1,1));
+		register __m128i k3 = _mm_shuffle_epi32(k, _MM_SHUFFLE(2,2,2,2));
+		register __m128i k4 = _mm_shuffle_epi32(k, _MM_SHUFFLE(3,3,3,3));
+		
+		//__m128i k  = _mm_set1_epi32(probes[i]);
+
+
+		//for root
+		cmpa = _mm_cmpgt_epi32(k1,lvlaroot);
+		cmpb = _mm_cmpgt_epi32(k1,lvlbroot);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1; // offset inside node
+		rangeId += pos + r;
+		pos += (pos >> 3) + r;
+
+		cmpa = _mm_cmpgt_epi32(k2,lvlaroot);
+		cmpb = _mm_cmpgt_epi32(k2,lvlbroot);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1; // offset inside node
+		rangeId2 += pos + r;
+		pos2 += (pos >> 3) + r;
+
+		cmpa = _mm_cmpgt_epi32(k3,lvlaroot);
+		cmpb = _mm_cmpgt_epi32(k3,lvlbroot);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1; // offset inside node
+		rangeId3 += pos + r;
+		pos3 += (pos >> 3) + r;
+
+		cmpa = _mm_cmpgt_epi32(k4,lvlaroot);
+		cmpb = _mm_cmpgt_epi32(k4,lvlbroot);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1; // offset inside node
+		rangeId4 += pos + r;
+		pos4 += (pos >> 3) + r;
 
 
 
+		//for middle 
+		pos <<= 2;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[1][pos]));
+		cmpa = _mm_cmpgt_epi32(k1,lvla);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 2; // offset inside node
+		rangeId += pos + r;
+		pos += (pos >> 2) + r;
 
+		pos2 <<= 2;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[1][pos2]));
+		cmpa = _mm_cmpgt_epi32(k2,lvla);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 2; // offset inside node
+		rangeId2 += pos2 + r;
+		pos2 += (pos2 >> 2) + r;
+
+		pos3 <<= 2;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[1][pos3]));
+		cmpa = _mm_cmpgt_epi32(k3,lvla);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 2; // offset inside node
+		rangeId3 += pos3 + r;
+		pos3 += (pos3 >> 2) + r;
+
+		pos4 <<= 2;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[1][pos4]));
+		cmpa = _mm_cmpgt_epi32(k4,lvla);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 2; // offset inside node
+		rangeId4 += pos4 + r;
+		pos4 += (pos4 >> 2) + r;
+
+
+
+		//for leaf
+		pos <<= 3;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[2][pos]));
+		lvlb = _mm_load_si128((__m128i *)&(t->tree[2][pos+4]));
+		cmpa = _mm_cmpgt_epi32(k1,lvla);
+		cmpb = _mm_cmpgt_epi32(k1,lvlb);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1;
+		rangeId += pos + r;
+		results[i] = rangeId;
+
+		pos2 <<= 3;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[2][pos2]));
+		lvlb = _mm_load_si128((__m128i *)&(t->tree[2][pos2+4]));
+		cmpa = _mm_cmpgt_epi32(k2,lvla);
+		cmpb = _mm_cmpgt_epi32(k2,lvlb);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1;
+		rangeId2 += pos2 + r;
+		results[i+1] = rangeId2;
+
+		pos3 <<= 3;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[2][pos3]));
+		lvlb = _mm_load_si128((__m128i *)&(t->tree[2][pos3+4]));
+		cmpa = _mm_cmpgt_epi32(k3,lvla);
+		cmpb = _mm_cmpgt_epi32(k3,lvlb);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1;
+		rangeId3 += pos3 + r;
+		results[i+2] = rangeId3;
+
+		pos4 <<= 3;
+		lvla = _mm_load_si128((__m128i *)&(t->tree[2][pos4]));
+		lvlb = _mm_load_si128((__m128i *)&(t->tree[2][pos4+4]));
+		cmpa = _mm_cmpgt_epi32(k4,lvla);
+		cmpb = _mm_cmpgt_epi32(k4,lvlb);
+		cmpa = _mm_packs_epi32(cmpa,cmpb);
+		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
+		r = __builtin_ctz(r) >> 1;
+		rangeId4 += pos4 + r;
+		results[i+3] = rangeId4;
+	}
+
+	
 }
 
 
