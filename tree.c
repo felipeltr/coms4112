@@ -139,80 +139,36 @@ void perform_insertions(Tree t, int32_t n) {
 
 void perform_probes(Tree t, int32_t probes[], int n, int32_t results[]) {
 
-	//array of probes to test;
+	int i, lv, rangeId,probe;
+	int l,r,pos, startpos;
 
-	
-
-	//start at root and traverse or add keys when passed by
-	int i;
 	for(i = 0; i < n; i++){
 
-		int rangeId = 0;
-		bool found = false;
-		int probe = probes[i];
-		int depth = 0;
-		int position = 0;
-		int identifier = 0;
-		bool atLeaf = false;
-		int counter = 0;
-		while (found == false) {
+		probe = probes[i];
 
-			if(depth == (t->depth)-1){
-				atLeaf = true;
+		lv = 0;
+		rangeId = 0;
+		startpos=0;
+		pos=0;
+		
+		while(lv < t->depth) {			
+			l=0;
+			r=t->levelSize[lv];
+			startpos = rangeId * t->levelSize[lv];
+			while(r-l) {
+				pos = (r+l)/2;
+				if (t->tree[lv][pos + startpos] < probe)
+                        l = pos + 1;
+                else
+                        r = pos;
 			}
-
-			//check if position is valid
-			if(counter <= t->levelSize[depth]){
-				//if the probe is less than the current position, traverse down and left
-				if (probe <= t->tree[depth][position] && (!atLeaf)){
-					rangeId += position;
-					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
-						position%t->levelSize[depth]) * (t->levelSize[depth+1]);
-					depth++;
-					counter = 0;
-				}
-				//if probe is greater than position, increment the position
-				else if((probe > t->tree[depth][position]) && (!atLeaf)){
-					//get keys and update identifier accordingly 
-					//identifier += getKeys(t, depth, position)+1;
-					position++;
-					counter++;
-				} 
-				//if probe is less than leaf, found the identifier
-				else if ((probe <= t->tree[depth][position]) && (atLeaf)){
-					rangeId += position;
-					found = true;
-				}
-				//if probe is greater move along the leaf
-				else if ((probe > t->tree[depth][position]) && (atLeaf)){
-					identifier++;
-					position++;
-					counter++;
-					
-				}
-			} else{
-				//if end of node and found
-				if(atLeaf){
-					rangeId += position;
-					found = true;
-				}
-				//if not at leaf, traverse down right most leaf
-				else{
-					rangeId += position;
-					position = ((position/t->levelSize[depth])*(t->levelSize[depth]+1) + 
-						position%t->levelSize[depth]-1) * (t->levelSize[depth+1]);
-					depth++;
-					counter = 0;
-
-				}
-			}
-
+			rangeId *= t->levelSize[lv] + 1;
+			rangeId += l;
+			lv++;
 		}
 		
-		//results[i][0]=probe;
-		//results[i][1]=identifier;
 		results[i]=rangeId;
-	}
+	}	
 }
 
 
@@ -328,7 +284,7 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 
 				break;
 			}
-			//break;
+			
 		}
 
 		results[i] = rangeId;
@@ -336,46 +292,14 @@ void perform_probes_simd(Tree t, int32_t probes[], int n, int32_t results[]) {
 
 }
 
-
-
-
-
-/*
-// get total keys when passed a pointer
-static int getKeys(Tree t, int depth, int position) {
-	depth++;
-	position = position * t->levelSize[depth];
-	bool atLeaf = false;
-	int keys = 0;
-	int counter = 0;
-
-	if(depth == (t->depth)-1){
-		atLeaf = true;
-	}
-
-	if(atLeaf)
-		keys = t->levelSize[depth];
-	else{
-		while(counter <= t->levelSize[depth]){
-			keys += getKeys(t,depth,position);
-			position++;
-			counter++;
-		}
-		keys+= t->levelSize[depth];
-	}
-	return keys;
-
-}
-*/
-
 void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[]){
 	int i, rangeId, rangeId2, rangeId3, rangeId4;
 	unsigned int pos = 0, r = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 	__m128i lvla, lvlb, cmpa, cmpb;
 	//go through probes 4 at a time
 	//root node loaded
-	__m128i lvlaroot = _mm_load_si128((__m128i *)&(t->tree[0][0]));
-	__m128i lvlbroot = _mm_load_si128((__m128i *)&(t->tree[0][4]));
+	register __m128i lvlaroot = _mm_load_si128((__m128i *)&(t->tree[0][0]));
+	register __m128i lvlbroot = _mm_load_si128((__m128i *)&(t->tree[0][4]));
 	//assumption that probes are multiples of 4 as said on PIAZZA
 	for(i = 0; i < n; i = i+4){
 		rangeId = 0;
@@ -394,8 +318,6 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 		register __m128i k2 = _mm_shuffle_epi32(k, _MM_SHUFFLE(1,1,1,1));
 		register __m128i k3 = _mm_shuffle_epi32(k, _MM_SHUFFLE(2,2,2,2));
 		register __m128i k4 = _mm_shuffle_epi32(k, _MM_SHUFFLE(3,3,3,3));
-		
-		//__m128i k  = _mm_set1_epi32(probes[i]);
 
 
 		//for root
@@ -404,7 +326,7 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 		cmpa = _mm_packs_epi32(cmpa,cmpb);
 		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 		r = __builtin_ctz(r) >> 1; // offset inside node
-		rangeId += pos + r;
+		rangeId = r;
 		pos += (pos >> 3) + r;
 
 		cmpa = _mm_cmpgt_epi32(k2,lvlaroot);
@@ -412,7 +334,7 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 		cmpa = _mm_packs_epi32(cmpa,cmpb);
 		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 		r = __builtin_ctz(r) >> 1; // offset inside node
-		rangeId2 += pos + r;
+		rangeId2 = r;
 		pos2 += (pos >> 3) + r;
 
 		cmpa = _mm_cmpgt_epi32(k3,lvlaroot);
@@ -420,7 +342,7 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 		cmpa = _mm_packs_epi32(cmpa,cmpb);
 		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 		r = __builtin_ctz(r) >> 1; // offset inside node
-		rangeId3 += pos + r;
+		rangeId3 = r;
 		pos3 += (pos >> 3) + r;
 
 		cmpa = _mm_cmpgt_epi32(k4,lvlaroot);
@@ -428,7 +350,7 @@ void perform_probes_hardcode(Tree t, int32_t probes[], int n, int32_t results[])
 		cmpa = _mm_packs_epi32(cmpa,cmpb);
 		r = 0x10000 | ~_mm_movemask_epi8(cmpa);
 		r = __builtin_ctz(r) >> 1; // offset inside node
-		rangeId4 += pos + r;
+		rangeId4 = r;
 		pos4 += (pos >> 3) + r;
 
 
