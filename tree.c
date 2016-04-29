@@ -51,7 +51,7 @@ void perform_insertions(Tree t, int32_t n) {
 	int32_t loadPerLevel[t->depth];
 	memset(loadPerLevel,0,t->depth * sizeof(int32_t));
 
-	int32_t l = t->depth - 1, lastl;
+	int32_t l = t->depth - 1;
 
 	// calculate insertions on each level
 	// by simulating insertion algorithm
@@ -68,7 +68,6 @@ void perform_insertions(Tree t, int32_t n) {
 		
 
 		loadPerLevel[l]++;
-		lastl = l;
 		if(loadPerLevel[l] % t->levelSize[l] == 0 &&
 			( l == (t->depth - 1) || loadPerLevel[l+1] % ((t->levelSize[l]+1)*t->levelSize[l+1]) == 0 ) ) {
 				l--;

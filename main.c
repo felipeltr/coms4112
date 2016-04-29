@@ -86,7 +86,7 @@ int main (int argc, char** argv) {
 			e3 = clock();
 #endif
 			printf("------\n");
-			for(i=0;i<4;i++)
+			for(i=0;i<newp;i++)
 				printf("Probe %d -> rangeid %d\n",probes[i],results[i]);
 			
 		}
