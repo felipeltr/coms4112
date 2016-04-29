@@ -4,11 +4,17 @@ CC = gcc
 
 OBJS = main.o tree.o random.o
 
+DEF = 
+
 $(OUTPUT): $(OBJS)
-	$(CC) -msse4.2 $(OBJS) -o $(OUTPUT)
+	$(CC) -msse4.2 -O3 -flto $(OBJS) -o $(OUTPUT)
+
+.PHONY: clic
+clic: DEF = -D _CLIC_ENV
+clic: all
 
 %.o: %.c
-	$(CC) -O3 -msse4.2 -c -Wall $<
+	$(CC) $(DEF) -O3 -flto -msse4.2 -c -Wall $<
 
 .PHONY: clean
 clean:
